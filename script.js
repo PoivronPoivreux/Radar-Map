@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let radarData = [];
     let userCircle;
+    let radarMarkers = [];
 
     const fetchData = async () => {
         try {
@@ -53,36 +54,57 @@ document.addEventListener("DOMContentLoaded", function() {
                 color: '#3388ff',
                 fillColor: '#3388ff',
                 fillOpacity: 0.5
-            }).addTo(map);
+            }).addTo(map).bindPopup(`Coordonnées: ${latitude}, ${longitude}`);
         } else {
             userCircle.setLatLng([latitude, longitude]);
         }
 
         map.setView([latitude, longitude], 13);
 
+        radarMarkers.forEach(marker => map.removeLayer(marker));
+        radarMarkers = [];
+
         const nearbyRadars = filterRadars(latitude, longitude);
         nearbyRadars.forEach(radar => {
             if (radar.lat && radar.lng) {
-                L.marker([radar.lat, radar.lng])
+                const marker = L.marker([radar.lat, radar.lng])
                     .bindPopup(`
                         <b>Type:</b> ${radar.typeLabel}<br>
                         <b>ID:</b> ${radar.id}<br>
                         <b>Coordonnées:</b> ${radar.lat}, ${radar.lng}
                     `)
                     .addTo(map);
+                radarMarkers.push(marker);
             }
         });
     };
 
     const errorCallback = (error) => {
-        console.error('Error getting user location:', error);
+        switch(error.code) {
+            case error.PERMISSION_DENIED:
+                console.error("User denied the request for Geolocation.");
+                break;
+            case error.POSITION_UNAVAILABLE:
+                console.error("Location information is unavailable.");
+                break;
+            case error.TIMEOUT:
+                console.error("The request to get user location timed out.");
+                break;
+            case error.UNKNOWN_ERROR:
+                console.error("An unknown error occurred.");
+                break;
+        }
     };
 
     fetchData().then(() => {
-        navigator.geolocation.watchPosition(updateMap, errorCallback, {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 5000
-        });
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(updateMap, errorCallback, {
+                enableHighAccuracy: true,
+                maximumAge: 0,
+                timeout: 5000
+            });
+        } else {
+            console.error("Geolocation is not supported by this browser.");
+        }
     });
 });
