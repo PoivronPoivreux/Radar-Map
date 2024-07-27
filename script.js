@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function() {
             userCircle.setLatLng([latitude, longitude]);
         }
 
-        map.setView([latitude, longitude], 13);
+        map.panTo([latitude, longitude]);
 
         radarMarkers.forEach(marker => map.removeLayer(marker));
         radarMarkers = [];
